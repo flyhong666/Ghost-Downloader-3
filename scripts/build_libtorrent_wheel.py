@@ -54,9 +54,9 @@ def main() -> None:
         "--recurse-submodules", "--shallow-submodules", UPSTREAM, str(source))
     libdatachannel = source / "deps" / "libdatachannel"
     run("git", "apply", "../patch-libdatachannel-32bit-builds.patch", cwd=libdatachannel)
-    # 写死的 VS 2022 生成器在 runner 上找不到；省略后 CMake 选最新的 VS，平台取本机的 ARM64
-    jamfile = libdatachannel / "Jamfile"
-    jamfile.write_bytes(jamfile.read_bytes().replace(b'-G "Visual Studio 17 2022" -A $(ARCH) ', b""))
+    # runner 只有 VS 2026：不写死 VS 2022 生成器，CMake 自选最新的 VS 和本机的 ARM64；
+    # VS 2026 生成 .slnx 而非 .sln，改用 cmake --build
+    run("git", "apply", str(Path(__file__).with_name("patch-libdatachannel-vs2026.patch").resolve()), cwd=libdatachannel)
 
     run("vcpkg", "install", "--triplet=arm64-windows-static", cwd=source / "tools")
     shutil.rmtree(OPENSSL_FOLDER, ignore_errors=True)
